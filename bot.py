@@ -2,7 +2,6 @@ import logging
 import sys
 from loader import dp, db, bot, get_info
 import asyncio
-from aiogram import F
 from handlers import register_handlers
 
 async def on_startup():
