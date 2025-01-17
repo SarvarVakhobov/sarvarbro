@@ -1,21 +1,6 @@
-from loader import tc
+from aiogram.types import ChatMemberMember, ChatMemberAdministrator, ChatMemberOwner
+from loader import bot
 
-client = tc
-
-async def get_all_subscribers(channel_username):
-    subscribers = []  # List to store subscriber details
-
-    async with client:
-        # Get the channel object
-        channel = await client.get_entity(channel_username)
-        
-        # Fetch all members
-        async for user in client.iter_participants(channel):
-            subscribers.append({
-                "id": user.id,
-            })
-
-    return subscribers
-
-def getsubs(username):
-    return client.loop.run_until_complete(get_all_subscribers(username))
+async def checksub(userid, chid):
+    member = await bot.get_chat_member(chat_id=chid, user_id=userid)
+    return member.status in [ChatMemberMember, ChatMemberAdministrator, ChatMemberOwner]

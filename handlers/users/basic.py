@@ -1,6 +1,6 @@
 from aiogram import Router, types, F
 from data import config, dict
-from filters import IsUser, IsUserCallback, IsRegistered
+from filters import IsUser, IsUserCallback, IsSubscriber, IsSubscriberCallback
 from aiogram.filters import CommandStart, Command
 # from keyboards.keyboard import user_markup, end_markup
 # from keyboards.inline import create_url_button, open_ban
@@ -12,8 +12,8 @@ from loader import db
 user = Router()
 
 
-user.message.filter(IsUser(), IsRegistered())
-user.callback_query.filter(IsUserCallback())
+user.message.filter(IsUser(), IsSubscriber())
+user.callback_query.filter(IsUserCallback(), IsSubscriberCallback())
 
 @user.message(CommandStart())
 @user.message(F.text == dict.main_menu)
