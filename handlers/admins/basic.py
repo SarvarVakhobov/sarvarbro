@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from data import dict
 from loader import db
 from keyboards.inline import mandchans
+from keyboards.keyb import adm_default
 
 admin = Router()
 
@@ -13,7 +14,7 @@ admin.callback_query.filter(IsAdminCallback())
 
 @admin.message(CommandStart())
 async def adminstart(message: types.Message) -> None:
-    await message.answer("Hello, admin")
+    await message.answer("Hello, admin", reply_markup=adm_default)
 
 @admin.message(F.text == dict.mands)
 async def pmands(message: types.Message) -> None:
