@@ -1,6 +1,6 @@
 from aiogram import Router, types, F
 from data import config, dict
-from filters import IsUser, IsUserCallback, IsSubscriber, IsSubscriberCallback
+from filters import IsUser, IsUserCallback, IsSubscriber, IsSubscriberCallback, CbData
 from aiogram.filters import CommandStart, Command
 # from keyboards.keyboard import user_markup, end_markup
 # from keyboards.inline import create_url_button, open_ban
@@ -30,3 +30,8 @@ async def helpme(message: types.Message, state: FSMContext) -> None:
     await state.clear()
     response = f"📚 Here is the help section."
     await message.answer(response)
+
+@user.callback_query(CbData("check_subs"))
+async def check_subs(callback: types.CallbackQuery) -> None:
+    await callback.message.answer("Thanks for joining the chats! You are now registered and can use all the functionality of the bot!")
+    await callback.message.delete()

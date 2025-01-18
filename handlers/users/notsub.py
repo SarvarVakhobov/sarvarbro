@@ -1,6 +1,6 @@
 from aiogram import Router, types
 from aiogram.filters import Command
-from filters import IsUser, IsUserCallback, IsNotSubscriber, IsNotSubscriberCallback
+from filters import IsUser, IsUserCallback, IsNotSubscriber, IsNotSubscriberCallback, CbData
 from keyboards.inline import mand_chans
 from loader import db
 from utils.yau import notsubbed
@@ -18,29 +18,22 @@ async def helpme(message: types.Message) -> None:
 
 @nosub.message()
 async def nuhuh(message: types.Message) -> None:
-    response = "❕ You need to join the following chats to be able to use me."
+    response = "❗️ You need to join the following chats to be able to use me."
     channels = await notsubbed(message.from_user.id)
     if channels:
         await message.answer(response, reply_markup=mand_chans(channels))
     else:
         await message.answer("Thanks for joinng the chats! You are now registered!")
 
-@nosub.callback_query()
+@nosub.callback_query(CbData("check_subs"))
 async def nuhuh_callback(callback: types.CallbackQuery) -> None:
-    response = "❕ You need to join the following chats to be able to use me."
+    # response = "❗️ You need to join the following chats to be able to use me."
+    response = "🚫 You didn't join all the following chats. Please join them to continue."
     channels = await notsubbed(callback.from_user.id)
-    print(channels)
-    if channels:
-        if callback.data == "check_subs":
-            response = "You didn't join all the following chats. Please join them to continue."
-        try:
-            await callback.message.edit_text(response, reply_markup=mand_chans(channels))
-        except Exception as e:
-            msg = await callback.message.answer("Please, don't spam the buttons.")
-            sleep(2)
-            await msg.delete()
-        await callback.answer("Join the chats to proceed!")
-    else:
-        await callback.message.answer("Thanks for joinng the chats! You are now registered!")
-        await callback.message.delete()
-        await callback.answer("You are now registered!")
+    await callback.answer("🚫 Join the chats to proceed!")
+    try:
+        await callback.message.edit_text(response, reply_markup=mand_chans(channels))
+    except Exception as e:
+        msg = await callback.message.answer("❗️ Please, don't spam the buttons.")
+        sleep(2)
+        await msg.delete()
