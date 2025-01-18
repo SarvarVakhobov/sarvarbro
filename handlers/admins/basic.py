@@ -19,7 +19,7 @@ async def adminstart(message: types.Message) -> None:
 @admin.message(F.text == dict.mands)
 async def pmands(message: types.Message) -> None:
     response = "There are no mandatory chats to join right now. You can add from here"
-    channels = db.fetchall("SELECT title, link FROM channels")
+    channels = db.fetchall("SELECT title, link FROM channel")
     if channels:
         response = "Following are the mandatory chats to join. You can add new, edit or delete existing ones."
     await message.answer(response, reply_markup=mandchans(channels))

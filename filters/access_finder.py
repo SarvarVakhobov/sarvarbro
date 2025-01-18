@@ -57,6 +57,8 @@ class IsNotSubscriberCallback(BaseFilter):
         return False
 
 class IsAdmin(BaseFilter):
+    # def __init__(self, args):
+    #     print(args)
     async def __call__(self, message: Message) -> bool:
         return message.from_user.id in config.ADMINS
     
