@@ -23,39 +23,58 @@ async def add_chat(callback: types.CallbackQuery, state: FSMContext) -> None:
 async def add_chat_title(message: types.Message, state: FSMContext) -> None:
     await state.update_data(title=message.text)
     await state.set_state(mands.link)
-    await message.answer("Send the link of the chat to add in one of the following formats:\n\t\tUsername: <code>username</code>\n\t\tUsername with @: <code>@username</code>\n\t\tPrivate link: <code>https://t.me/+AbCdEfGhIj</code>\n\t\tPublic link: <code>https://t.me/username</code>")
+    await message.answer("Send the link of the chat to add in one of the following formats:\n\t\tUsername: <code>username</code>\n\t\tUsername with @: <code>@username</code>\n\t\tPublic link: <code>https://t.me/username</code>\n\nOr forward a message from the chat to here (Better for private chats)")
 
 @mad.message(mands.link)
 async def getlink(message: types.Message, state: FSMContext) -> None:
     USERNAME_PATTERN = r"^[a-zA-Z][\w\d_]{4,31}$"  # Username (e.g., channelname)
     AT_USERNAME_PATTERN = r"^@[a-zA-Z][\w\d_]{4,31}$"  # Username starting with @
-    PRIVATE_LINK_PATTERN = r"^https://t\.me/\+\w+$"  # Private links (e.g., https://t.me/+W3UbzATqipEzYTVi)
+    # PRIVATE_LINK_PATTERN = r"^https://t\.me/\+\w+$"  # Private links (e.g., https://t.me/+W3UbzATqipEzYTVi)
     PUBLIC_LINK_PATTERN = r"^https://t\.me/[a-zA-Z][\w\d_]{4,31}$"  # Public links (e.g., https://t.me/channelname)
-    text = message.text.strip()
+    text = None
     lk = None
-    if re.match(USERNAME_PATTERN, text):
-        lk = f"https://t.me/{text}"
-    elif re.match(AT_USERNAME_PATTERN, text):
-        lk = f"https://t.me/{text[1:]}"
-    elif re.match(PRIVATE_LINK_PATTERN, text):
-        lk = text
-    elif re.match(PUBLIC_LINK_PATTERN, text):
-        lk = text
+    chanid = None
+    # print(message.forward_from_chat)
+    if message.forward_from_chat:
+        chanid = message.forward_from_chat.id
+        if message.forward_from_chat.username == None:
+            try:
+                lk = (await bot.create_chat_invite_link(chat_id=chanid, name=f"Join link by {config.bot_info.username}")).invite_link
+            except Exception as e:
+                print(e)
+                await message.answer("Please, make sure to add the bot to the chat as an admin and try again")
+                return
+        else:
+            lk = f"https://t.me/{message.forward_from_chat.username}"
     else:
-        await message.answer("Invalid link format. Please, send the link of the chat to add in one of the following formats:\n\t\tUsername: <code>username</code>\n\t\tUsername with @: <code>@username</code>\n\t\tPrivate link: <code>https://t.me/+AbCdEfGhIj</code>\n\t\tPublic link: <code>https://t.me/username</code>")
-        return
+        text = message.text 
+        if re.match(USERNAME_PATTERN, text):
+            chanid = (await bot.get_chat("@"+text)).id
+            lk = f"https://t.me/{text}"
+        elif re.match(AT_USERNAME_PATTERN, text):
+            chanid = (await bot.get_chat(text)).id
+            lk = f"https://t.me/{text[1:]}"
+        elif re.match(PUBLIC_LINK_PATTERN, text):
+            chanid = (await bot.get_chat("@"+text[13])).id
+            lk = text
+        else:
+            await message.answer("Invalid link format. Please, send the link of the chat to add in one of the following formats:\n\t\tUsername: <code>username</code>\n\t\tUsername with @: <code>@username</code>\n\t\tPublic link: <code>https://t.me/username</code>\n\nOr forward a message from the chat to here (Better for private chats)")
+            return
     data = await state.get_data()
     title = data.get("title")
     try:
-        channel_info = await bot.get_chat("@"+lk[13:])
-        mb_cnt = await bot.get_chat_member_count(channel_info.id)
-        mebot = await bot.get_chat_member(chat_id=channel_info.id, user_id=config.bot_info.id)
-    except Exception:
+        channel_info = await bot.get_chat(chanid)
+        mb_cnt = await bot.get_chat_member_count(chanid)
+        mebot = await bot.get_chat_member(chat_id=chanid, user_id=config.bot_info.id)
+    except Exception as e:
+        print(e)
+        print(lk)
         await message.answer("Please, make sure to add the bot to the chat as an admin, chat exists and try again")
         return
+    print(title, lk)
     await state.set_state(mands.confirm)
     await state.update_data(link=lk)
-    await state.update_data(chid=channel_info.id)
+    await state.update_data(chid=chanid)
     await message.answer(f"Check and confirm everything is correct\n\nChat Information:"
             f"\n\t\tTitle: {channel_info.title}"
             f"\n\t\tMembers count: {mb_cnt}"
