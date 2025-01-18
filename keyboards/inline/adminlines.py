@@ -14,3 +14,16 @@ def mandchans(channels = []):
             ])
     btns.append([InlineKeyboardButton(text=dict.add_chat, callback_data="add_chat")])
     return InlineKeyboardMarkup(inline_keyboard=btns)
+
+
+def mandconfirm(channel):
+    btns = [
+        [
+            InlineKeyboardButton(text=channel[0], url=channel[1])
+        ],
+        [
+            InlineKeyboardButton(text=dict.cancel, callback_data="cancel"),
+            InlineKeyboardButton(text=dict.confirm, callback_data="confirm")
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=btns)

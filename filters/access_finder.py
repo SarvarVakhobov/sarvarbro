@@ -17,7 +17,7 @@ class IsSubscriber(BaseFilter):
     async def __call__(self, message: Message) -> bool:
         channels = db.fetchall("SELECT chid FROM channel")
         for ch in channels:
-            if checksub(message.from_user.id, ch[0]):
+            if not await checksub(message.from_user.id, ch[0]):
             #  member = await bot.get_chat_member(chat_id=ch[0], user_id=message.from_user.id)
             # print(member)
             # if member.status not in [ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
@@ -28,7 +28,7 @@ class IsNotSubscriber(BaseFilter):
     async def __call__(self, message: Message) -> bool:
         channels = db.fetchall("SELECT chid FROM channel")
         for ch in channels:
-            if checksub(message.from_user.id, ch[0]):
+            if not await checksub(message.from_user.id, ch[0]):
             # member = await bot.get_chat_member(chat_id=ch[0], user_id=message.from_user.id)
             # print(member)
             # if member.status not in [ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
@@ -39,7 +39,7 @@ class IsSubscriberCallback(BaseFilter):
     async def __call__(self, callback: CallbackQuery) -> bool:
         channels = db.fetchall("SELECT chid FROM channel")
         for ch in channels:
-            if not checksub(callback.from_user.id, ch[0]):
+            if not await checksub(callback.from_user.id, ch[0]):
             # member = await bot.get_chat_member(chat_id=ch[0], user_id=callback.from_user.id)
             # print(member)
             # if member.status not in [ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
@@ -51,7 +51,7 @@ class IsNotSubscriberCallback(BaseFilter):
     async def __call__(self, callback: CallbackQuery) -> bool:
         channels = db.fetchall("SELECT chid FROM channel")
         for ch in channels:
-            if not checksub(callback.from_user.id, ch[0]):
+            if not await checksub(callback.from_user.id, ch[0]):
             # if callback.from_user.id in getsubs(ch[0]):
                 return True
         return False

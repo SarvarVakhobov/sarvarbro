@@ -4,3 +4,6 @@ class mands(StatesGroup):
     title = State()
     link = State()
     confirm = State()
+
+class dels(StatesGroup):
+    confirm = State()
