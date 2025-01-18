@@ -60,11 +60,11 @@ class IsAdmin(BaseFilter):
     # def __init__(self, args):
     #     print(args)
     async def __call__(self, message: Message) -> bool:
-        return message.from_user.id in config.ADMINS
+        return message.from_user.id in config.ADMINS and message.chat.type == "private"
     
 class IsAdminCallback(BaseFilter):
     async def __call__(self, callback: CallbackQuery) -> bool:
-        return callback.from_user.id in config.ADMINS
+        return callback.from_user.id in config.ADMINS and callback.message.chat.type == "private"
 
 class IsUser(BaseFilter):
     async def __call__(self, message: Message) -> bool:

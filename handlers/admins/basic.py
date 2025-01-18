@@ -3,7 +3,7 @@ from aiogram.filters import Command, CommandStart
 from filters import IsAdmin, IsAdminCallback
 from aiogram.fsm.context import FSMContext
 from data import dict
-from loader import db
+from loader import db, bot
 from keyboards.inline import mandchans
 from keyboards.keyb import adm_default
 
@@ -15,7 +15,9 @@ admin.callback_query.filter(IsAdminCallback())
 @admin.message(CommandStart())
 async def adminstart(message: types.Message, state: FSMContext) -> None:
     await state.clear()
-    await message.answer("Hello, admin", reply_markup=adm_default)
+    await bot.get_chat(message.from_user.id)
+
+    await message.answer(f"Hello, admin <a href=\"tg://user?id=7079607349\">wtf</a>", reply_markup=adm_default)
 
 @admin.message(F.text == dict.mands)
 async def pmands(message: types.Message, state: FSMContext) -> None:

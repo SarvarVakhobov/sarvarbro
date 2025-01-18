@@ -71,7 +71,7 @@ async def getlink(message: types.Message, state: FSMContext) -> None:
         print(lk)
         await message.answer("Please, make sure to add the bot to the chat as an admin, chat exists and try again")
         return
-    print(title, lk)
+    # print(title, lk)
     await state.set_state(mands.confirm)
     await state.update_data(link=lk)
     await state.update_data(chid=chanid)
@@ -105,7 +105,7 @@ async def delete_chat(callback: types.CallbackQuery, state: FSMContext) -> None:
     await state.set_state(dels.confirm)
     cnt = int(callback.data.split("_")[1])
     channel = db.fetchone("SELECT * FROM channel WHERE idx=?", (cnt,))
-    print(cnt, channel)
+    # print(cnt, channel)
     if not channel:
         await callback.answer("Channel not found")
         await callback.message.delete()
