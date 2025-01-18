@@ -13,13 +13,15 @@ admin.message.filter(IsAdmin())
 admin.callback_query.filter(IsAdminCallback())
 
 @admin.message(CommandStart())
-async def adminstart(message: types.Message) -> None:
+async def adminstart(message: types.Message, state: FSMContext) -> None:
+    await state.clear()
     await message.answer("Hello, admin", reply_markup=adm_default)
 
 @admin.message(F.text == dict.mands)
-async def pmands(message: types.Message) -> None:
+async def pmands(message: types.Message, state: FSMContext) -> None:
+    await state.clear()
     response = "There are no mandatory chats to join right now. You can add from here"
-    channels = db.fetchall("SELECT title, link FROM channel")
+    channels = db.fetchall("SELECT title, link, idx FROM channel")
     if channels:
-        response = "Following are the mandatory chats to join. You can add new, edit or delete existing ones."
+        response = "Following are the mandatory chats to join. You can add new or delete existing ones."
     await message.answer(response, reply_markup=mandchans(channels))
