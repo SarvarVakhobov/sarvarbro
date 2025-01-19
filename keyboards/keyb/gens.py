@@ -7,5 +7,12 @@ btns1 = [
     ]
 ]
 
-back_keys = ReplyKeyboardMarkup(keyboard=btns1, resize_keyboard=True)
+back_key = ReplyKeyboardMarkup(keyboard=btns1, resize_keyboard=True)
 
+btns2 = [
+    [
+        KeyboardButton(text=dict.main_menu)
+    ]
+]
+
+main_key = ReplyKeyboardMarkup(keyboard=btns2, resize_keyboard=True)

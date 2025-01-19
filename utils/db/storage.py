@@ -13,9 +13,10 @@ class DatabaseManager(object):
 
     def create_tables(self):
         self.query('CREATE TABLE IF NOT EXISTS users (idx INTEGER PRIMARY KEY, userid TEXT, fullname TEXT, username TEXT, regdate TEXT DEFAULT CURRENT_TIMESTAMP)')
-        self.query("CREATE TABLE IF NOT EXISTS exams (idx INTEGER PRIMARY KEY, code TEXT, title TEXT, about TEXT, num_questions INTEGER, correct TEXT, running INTEGER)")
+        self.query("CREATE TABLE IF NOT EXISTS folders (idx INTEGER PRIMARY KEY, title TEXT)")
+        self.query("CREATE TABLE IF NOT EXISTS exams (idx INTEGER PRIMARY KEY, code TEXT, title TEXT, about TEXT, num_questions INTEGER, correct TEXT, folder INTEGER, running INTEGER)")
         self.query("CREATE TABLE IF NOT EXISTS submissions(idx INTEGER PRIMARY KEY, exid INTEGER, userid TEXT, date TEXT, corr INTEGER)")
-        self.query("CREATE TABLE IF NOT EXISTS channel (idx INTEGER PRIMARY KEY, chid TEXT, title TEXT, link TEXT)")
+        self.query("CREATE TABLE IF NOT EXISTS channel (idx INTEGER PRIMARY KEY, chid TEXT, title TEXT, link TEXT, post INTEGER DEFAULT 0)")
 
     def query(self, arg, values=None):
         if values == None:

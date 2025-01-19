@@ -13,12 +13,12 @@ from states import create_states
 from loader import db
 from filters import AdminFilter
 
-admin_router = Router()
-admin_router.message.filter(AdminFilter())
-admin_router.callback_query.filter(AdminFilter())
+crt = Router()
+crt.message.filter(AdminFilter())
+crt.callback_query.filter(AdminFilter())
 
-@admin_router.message(Command("create"))
-@admin_router.message(F.text == config.cr_test)
+@crt.message(Command("create"))
+@crt.message(F.text == config.cr_test)
 async def create_test(message: types.Message, state: FSMContext):
     alr = db.fetchone("SELECT COUNT(*) FROM exams")[0]
     if alr==MAX_EXAMS_AT_A_TIME:
@@ -36,26 +36,26 @@ async def create_test(message: types.Message, state: FSMContext):
     # else:
     #     await message.answer("Delete the current one first")
 
-@admin_router.message(create_states.title)
+@crt.message(create_states.title)
 async def take_title(message: types.Message, state: FSMContext):
     t = message.text
     await state.update_data(title=t)
     await state.set_state(create_states.about)
     await message.answer(f"<b>Title:</b> {t}\n\nPlease, send the description:", reply_markup=in_bet)
 
-@admin_router.message(create_states.about, F.text == config.back)
+@crt.message(create_states.about, F.text == config.back)
 async def back_to_title(message: types.Message, state: FSMContext):
     await state.set_state(create_states.title)
     await create_test(message, state)
 
-@admin_router.message(create_states.about, F.text == config.skip)
+@crt.message(create_states.about, F.text == config.skip)
 async def skip_to_questnum(message: types.Message, state: FSMContext):
     data = await state.get_data()
     await state.update_data(about="__skip")
     await state.set_state(create_states.num_quest)
     await message.answer(f"<b>Title:</b> {data["title"]}\n<s>Description skipped</s>\n\nPlease, send the number of questions:", reply_markup=num_quests)
 
-@admin_router.message(create_states.about)
+@crt.message(create_states.about)
 async def about(message: types.Message, state: FSMContext):
     data = await state.get_data()
     a = message.text
@@ -63,7 +63,7 @@ async def about(message: types.Message, state: FSMContext):
     await state.set_state(create_states.num_quest)
     await message.answer(f"<b>Title:</b> {data["title"]}\n<b>Description:</b> {a}\n\nPlease, send the number of questions:", reply_markup=num_quests)
 
-@admin_router.message(create_states.num_quest, F.text == config.back)
+@crt.message(create_states.num_quest, F.text == config.back)
 async def back_to_about(message: types.Message, state: FSMContext):
     data = await state.get_data()
     response = f"<b>Title:</b> {data['title']}"
@@ -71,7 +71,7 @@ async def back_to_about(message: types.Message, state: FSMContext):
     await state.set_state(create_states.about)
     await message.answer(response, reply_markup=in_bet)
 
-@admin_router.message(create_states.num_quest)
+@crt.message(create_states.num_quest)
 async def process_num(message: types.Message, state: FSMContext):
     num = int()
     try:
@@ -94,7 +94,7 @@ async def process_num(message: types.Message, state: FSMContext):
     else:
         await message.answer("Please, enter a number in range of 1 to 50 to provide good user experience")
 
-@admin_router.message(create_states.correct_answer, F.text == config.back)
+@crt.message(create_states.correct_answer, F.text == config.back)
 async def back_to_num(message: types.Message, state: FSMContext):
     data = await state.get_data()
     if data["current"]>1:
@@ -114,7 +114,7 @@ async def back_to_num(message: types.Message, state: FSMContext):
         await state.set_state(create_states.num_quest)
         await message.answer(response, reply_markup=num_quests)
 
-@admin_router.callback_query(create_states.correct_answer)
+@crt.callback_query(create_states.correct_answer)
 async def process_checking(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     n = data["current"]
@@ -133,7 +133,7 @@ async def process_checking(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.answer(f"<b>{n-1}</b> answers were given with one-by-one method. Please, send the others, starting with the answer for question number {n}, at once.")
         await callback.message.edit_reply_markup(reply_markup=all_checked)
 
-@admin_router.message(create_states.correct_answer)
+@crt.message(create_states.correct_answer)
 async def taking_answers(message: types.Message, state: FSMContext):
     data = await state.get_data()
     cnt = data["current"]
@@ -194,7 +194,7 @@ async def taking_answers(message: types.Message, state: FSMContext):
 #     else:
 #         await message.answer("The answer include an option that's not legit")
 
-@admin_router.callback_query(create_states.confirm)
+@crt.callback_query(create_states.confirm)
 async def create_confirm(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     if callback.data == "admin_confirm":
@@ -217,7 +217,7 @@ async def create_confirm(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
     await state.clear()
 
-@admin_router.message(create_states.confirm, F.text == config.back)
+@crt.message(create_states.confirm, F.text == config.back)
 async def back_to_receiving(message: types.Message, state: FSMContext):
     data = await state.get_data()
     response = f"<b>Title:</b> {data['title']}"

@@ -5,8 +5,10 @@ from data import dict, config
 from aiogram.fsm.context import FSMContext
 from states import mands, dels
 from keyboards.inline import mandconfirm
+from keyboards.keyb import back_key, adm_default, main_key
 from .basic import pmands
 from loader import bot, db
+from time import sleep
 
 mad = Router()
 
@@ -16,14 +18,24 @@ mad.message.filter(IsAdmin())
 @mad.callback_query(CbData("add_chat"))
 async def add_chat(callback: types.CallbackQuery, state: FSMContext) -> None:
     await state.set_state(mands.title)
-    await callback.message.answer("Send the title of the chat to add")
+    await callback.message.answer("Send the title of the chat to add", reply_markup=back_key)
     await callback.message.delete()
+
+@mad.message(mands.title, F.text == dict.back)
+async def back_to_main(message: types.Message, state: FSMContext) -> None:
+    # msg = await message.reply(f"Back to menu: {dict.mands}", reply_markup=main_key)
+    await pmands(message, state)
 
 @mad.message(mands.title)
 async def add_chat_title(message: types.Message, state: FSMContext) -> None:
     await state.update_data(title=message.text)
     await state.set_state(mands.link)
-    await message.answer("Send the link of the chat to add in one of the following formats:\n\t\tUsername: <code>username</code>\n\t\tUsername with @: <code>@username</code>\n\t\tPublic link: <code>https://t.me/username</code>\n\nOr forward a message from the chat to here (Better for private chats)")
+    await message.answer("Send the link of the chat to add in one of the following formats:\n\t\tUsername: <code>username</code>\n\t\tUsername with @: <code>@username</code>\n\t\tPublic link: <code>https://t.me/username</code>\n\nOr forward a message from the chat to here (Better for private chats)", reply_markup=back_key)
+
+@mad.message(mands.link, F.text == dict.back)
+async def back_to_title(message: types.Message, state: FSMContext) -> None:
+    await state.set_state(mands.title)
+    await message.answer("Now send the right title", reply_markup=back_key)
 
 @mad.message(mands.link)
 async def getlink(message: types.Message, state: FSMContext) -> None:
@@ -49,16 +61,24 @@ async def getlink(message: types.Message, state: FSMContext) -> None:
     else:
         text = message.text 
         if re.match(USERNAME_PATTERN, text):
-            chanid = (await bot.get_chat("@"+text)).id
+            # chanid = (await bot.get_chat("@"+text)).id
+            uname = "@"+text
             lk = f"https://t.me/{text}"
         elif re.match(AT_USERNAME_PATTERN, text):
-            chanid = (await bot.get_chat(text)).id
+            uname = text
+            # chanid = (await bot.get_chat(text)).id
             lk = f"https://t.me/{text[1:]}"
         elif re.match(PUBLIC_LINK_PATTERN, text):
-            chanid = (await bot.get_chat("@"+text[13])).id
+            # chanid = (await bot.get_chat("@"+text[13])).id
+            uname = "@"+text[13:]
             lk = text
         else:
             await message.answer("Invalid link format. Please, send the link of the chat to add in one of the following formats:\n\t\tUsername: <code>username</code>\n\t\tUsername with @: <code>@username</code>\n\t\tPublic link: <code>https://t.me/username</code>\n\nOr forward a message from the chat to here (Better for private chats)")
+            return
+        try:
+            chanid = (await bot.get_chat(uname)).id
+        except:
+            await message.answer("Chat not found, make sure chat exists and bot is an admin in the chat")
             return
     data = await state.get_data()
     title = data.get("title")
@@ -80,6 +100,11 @@ async def getlink(message: types.Message, state: FSMContext) -> None:
             f"\n\t\tMembers count: {mb_cnt}"
             f"\n\t\tDescription: <code>{channel_info.description or 'No description'}</code>", reply_markup=mandconfirm((title, lk)), disable_web_page_preview=True)
 
+@mad.message(F.text == dict.back, mands.confirm)
+async def back_to_link(message: types.Message, state: FSMContext) -> None:
+    await state.set_state(mands.link)
+    await message.answer("Now send the right link", reply_markup=back_key)
+
 @mad.callback_query(mands.confirm)
 async def confirm(callback: types.CallbackQuery, state: FSMContext) -> None:
     if callback.data == "cancel":
@@ -92,6 +117,13 @@ async def confirm(callback: types.CallbackQuery, state: FSMContext) -> None:
     chid = data.get("chid")
     title = data.get("title")
     link = data.get("link")
+    chck = db.fetchone("SELECT title FROM channel WHERE chid = ? AND NOT post = 1", (chid,))
+    if chck:
+        await callback.message.answer(f"This channel already has been added with the title <b>{chck[0]}</b>")
+        await callback.answer("Cancelled")
+        await pmands(callback.message, state)
+        await callback.message.delete()
+        return
     # channel_info = await bot.get_chat(link)
     db.query("INSERT INTO channel (chid, title, link) VALUES (?, ?, ?)", (chid, title, link))
     await callback.answer(f"Successfully added")
@@ -104,7 +136,7 @@ async def confirm(callback: types.CallbackQuery, state: FSMContext) -> None:
 async def delete_chat(callback: types.CallbackQuery, state: FSMContext) -> None:
     await state.set_state(dels.confirm)
     cnt = int(callback.data.split("_")[1])
-    channel = db.fetchone("SELECT * FROM channel WHERE idx=?", (cnt,))
+    channel = db.fetchone("SELECT * FROM channel WHERE idx=? AND NOT post = 1", (cnt,))
     # print(cnt, channel)
     if not channel:
         await callback.answer("Channel not found")
