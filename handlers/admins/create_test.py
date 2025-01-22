@@ -9,24 +9,24 @@ from data.config import MAX_EXAMS_AT_A_TIME
 from utils import g_code
 from keyboards.inline import confirm_admin, all_checked, one_checked
 from keyboards.keyb import main_markup, admin_markup, in_bet, num_quests
-from states import create_states
+from states import creates
 from loader import db
-from filters import AdminFilter
+from filters import IsAdmin, IsAdminCallback
 
 crt = Router()
-crt.message.filter(AdminFilter())
-crt.callback_query.filter(AdminFilter())
+crt.message.filter(IsAdmin())
+crt.callback_query.filter(IsAdminCallback())
 
-@crt.message(Command("create"))
+# @crt.message(Command("create"))
 @crt.message(F.text == config.cr_test)
 async def create_test(message: types.Message, state: FSMContext):
-    alr = db.fetchone("SELECT COUNT(*) FROM exams")[0]
-    if alr==MAX_EXAMS_AT_A_TIME:
-        await message.answer("You exceeded the number of tests can be run at a time.")
-        return
+    # alr = db.fetchone("SELECT COUNT(*) FROM exams")[0]
+    # if alr==MAX_EXAMS_AT_A_TIME:
+    #     await message.answer("You exceeded the number of tests can be run at a time.")
+    #     return
     # await message.reply("👇 Here, you can create a new test.\n⚠️ Make sure to check if a duplicate isn't already active.")
     response = "Please, send the title of the test:"
-    await state.set_state(create_states.title)
+    await state.set_state(creates.title)
     await message.answer(response, reply_markup=main_markup)
     #
     # alr = db.fetchone("SELECT correct FROM current")
@@ -36,42 +36,44 @@ async def create_test(message: types.Message, state: FSMContext):
     # else:
     #     await message.answer("Delete the current one first")
 
-@crt.message(create_states.title)
+@crt.message(creates.title)
 async def take_title(message: types.Message, state: FSMContext):
     t = message.text
     await state.update_data(title=t)
-    await state.set_state(create_states.about)
+    await state.set_state(creates.about)
     await message.answer(f"<b>Title:</b> {t}\n\nPlease, send the description:", reply_markup=in_bet)
 
-@crt.message(create_states.about, F.text == config.back)
+@crt.message(creates.about, F.text == config.back)
 async def back_to_title(message: types.Message, state: FSMContext):
-    await state.set_state(create_states.title)
+    await state.set_state(creates.title)
     await create_test(message, state)
 
-@crt.message(create_states.about, F.text == config.skip)
+@crt.message(creates.about, F.text == config.skip)
 async def skip_to_questnum(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    await state.update_data(about="__skip")
-    await state.set_state(create_states.num_quest)
-    await message.answer(f"<b>Title:</b> {data["title"]}\n<s>Description skipped</s>\n\nPlease, send the number of questions:", reply_markup=num_quests)
+    title = await state.get("title")
+    await state.update_data(about_skip = 1)
+    await state.set_state(creates.num_quest)
+    await message.answer(f"<b>Title:</b> {title}\n<s>Description skipped</s>\n\nPlease, send the number of questions:", reply_markup=num_quests)
 
-@crt.message(create_states.about)
+@crt.message(creates.about)
 async def about(message: types.Message, state: FSMContext):
-    data = await state.get_data()
+    # data = await state.get_data()
+    title = await state.get("title")
     a = message.text
     await state.update_data(about=a)
-    await state.set_state(create_states.num_quest)
-    await message.answer(f"<b>Title:</b> {data["title"]}\n<b>Description:</b> {a}\n\nPlease, send the number of questions:", reply_markup=num_quests)
+    await state.update_data(about_skip = 0)
+    await state.set_state(creates.num_quest)
+    await message.answer(f"<b>Title:</b> {title}\n<b>Description:</b> {a}\n\nPlease, send the number of questions:", reply_markup=num_quests)
 
-@crt.message(create_states.num_quest, F.text == config.back)
+@crt.message(creates.num_quest, F.text == config.back)
 async def back_to_about(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    response = f"<b>Title:</b> {data['title']}"
-    response += (f"\n\nPlease, send the description:" if data["about"]!="__skip" else "\n\nPlease, send the description:")
-    await state.set_state(create_states.about)
+    response = f"<b>Title:</b> {await state.get('title')}"
+    response += (f"\n\nPlease, send the description:" if await state.get("about_skip")!="__skip" else "\n\nPlease, send the description:")
+    await state.set_state(creates.about)
     await message.answer(response, reply_markup=in_bet)
 
-@crt.message(create_states.num_quest)
+@crt.message(creates.num_quest)
 async def process_num(message: types.Message, state: FSMContext):
     num = int()
     try:
@@ -111,10 +113,10 @@ async def back_to_num(message: types.Message, state: FSMContext):
         response = f"<b>Title:</b> {data['title']}"
         response += f"\n<b>Description:</b> {data["about"]}" if data["about"] != "__skip" else ""
         response += "\n\nPlease, enter the number of questions:"
-        await state.set_state(create_states.num_quest)
+        await state.set_state(creates.num_quest)
         await message.answer(response, reply_markup=num_quests)
 
-@crt.callback_query(create_states.correct_answer)
+@crt.callback_query(creates.correct_answer)
 async def process_checking(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     n = data["current"]
@@ -133,7 +135,7 @@ async def process_checking(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.answer(f"<b>{n-1}</b> answers were given with one-by-one method. Please, send the others, starting with the answer for question number {n}, at once.")
         await callback.message.edit_reply_markup(reply_markup=all_checked)
 
-@crt.message(create_states.correct_answer)
+@crt.message(creates.correct_answer)
 async def taking_answers(message: types.Message, state: FSMContext):
     data = await state.get_data()
     cnt = data["current"]
@@ -147,7 +149,7 @@ async def taking_answers(message: types.Message, state: FSMContext):
                 cnt+=1
         if cnt == n_questions+1:
             await state.update_data(correct=correct)
-            await state.set_state(create_states.confirm)
+            await state.set_state(creates.confirm)
             await message.answer(f"Can you confirm your actions?", reply_markup=confirm_admin)
         else:
             await message.answer("The number of questions doesn't match the entered value. Please, enter correct number of answers or change the number of questions.", reply_markup=num_quests)

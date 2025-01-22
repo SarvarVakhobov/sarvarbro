@@ -3,11 +3,13 @@ import sys
 from loader import dp, db, bot, get_info
 import asyncio
 from handlers import register_handlers
+from loader import scheduler
 
 async def on_startup():
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     await get_info(bot)
     register_handlers(dp)
+    scheduler.start()
     db.create_tables()
     logging.warning("Database started...")
 

@@ -13,7 +13,7 @@ set = Router()
 
 set.message.filter(IsAdmin())
 set.callback_query.filter(IsAdminCallback())
-
+# bot.send_message(config.ADMINS[0], "Settings handler loaded", reply_parameters=)
 @set.message(F.text == dict.settings)
 async def sett(message: types.Message, state: FSMContext):
     await state.set_state(sets.smenu)

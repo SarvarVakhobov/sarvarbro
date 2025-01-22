@@ -16,3 +16,10 @@ class sets(StatesGroup):
     confirm = State()
     fmans = State()
     del_con = State()
+
+class creates(StatesGroup):
+    title = State()
+    about = State()
+    number = State()
+    stime = State()
+    collection = State()

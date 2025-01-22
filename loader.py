@@ -1,7 +1,7 @@
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-# from telethon import TelegramClient
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from data import config
 from utils.db import DatabaseManager
 
@@ -13,3 +13,4 @@ async def get_info(bot):
 # tc = TelegramClient('TestChecker', config.API_ID, config.API_HASH)
 dp = Dispatcher()
 db = DatabaseManager("data/database.db")
+scheduler = AsyncIOScheduler()
