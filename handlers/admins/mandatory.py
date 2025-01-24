@@ -8,6 +8,7 @@ from keyboards.inline import mandconfirm
 from keyboards.keyb import back_key, adm_default, main_key
 from .basic import pmands
 from loader import bot, db
+from aiogram import html
 from time import sleep
 
 mad = Router()
@@ -96,9 +97,9 @@ async def getlink(message: types.Message, state: FSMContext) -> None:
     await state.update_data(link=lk)
     await state.update_data(chid=chanid)
     await message.answer(f"Check and confirm everything is correct\n\nChat Information:"
-            f"\n\t\tTitle: {channel_info.title}"
-            f"\n\t\tMembers count: {mb_cnt}"
-            f"\n\t\tDescription: <code>{channel_info.description or 'No description'}</code>", reply_markup=mandconfirm((title, lk)), disable_web_page_preview=True)
+            f"\n\t\tTitle: {html.bold(channel_info.title)}"
+            f"\n\t\tMembers count: {html.bold(mb_cnt)}"
+            f"\n\t\tDescription: {html.blockquote(channel_info.description or 'No description')}", reply_markup=mandconfirm((title, lk)), disable_web_page_preview=True)
 
 @mad.message(F.text == dict.back, mands.confirm)
 async def back_to_link(message: types.Message, state: FSMContext) -> None:

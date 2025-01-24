@@ -18,7 +18,8 @@ async def helpme(message: types.Message) -> None:
 
 @nosub.message()
 async def nuhuh(message: types.Message) -> None:
-    response = "❗️ You need to join the following chats to be able to use me."
+    await message.answer("❗️ You need to join the following chats to be able to use me.", reply_markup=types.ReplyKeyboardRemove())
+    response = "After joining all the chats provided, press the \"✓ Check\" button below."
     channels = await notsubbed(message.from_user.id)
     if channels:
         await message.answer(response, reply_markup=mand_chans(channels))

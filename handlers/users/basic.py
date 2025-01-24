@@ -22,7 +22,7 @@ async def welcome(message: types.Message, state: FSMContext) -> None:
     print(message.from_user.mention_html)
     # alr = db.fetchone("SELECT * FROM users WHERE userid=?", (message.from_user.id,))
     # conv = db.fetchone("SELECT COUNT(idx) FROM chats WHERE userid=?", (message.from_user.id,))[0]
-    response = f"👋 Heyy, <b>{message.from_user.mention_html()}</b>. Welcome back to the bot!"
+    response = f"👋 Salom, <b>{message.from_user.mention_html()}</b>. Botga xush kelibsiz!"
     await message.answer(response, reply_markup=user_markup)
 
 @user.message(Command("help"))

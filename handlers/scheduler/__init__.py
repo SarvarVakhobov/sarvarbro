@@ -1,1 +1,1 @@
-from .sched import start_scheduler, schedule_message
+from .sched import schedule_message

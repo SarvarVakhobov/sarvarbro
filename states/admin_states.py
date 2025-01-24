@@ -21,5 +21,13 @@ class creates(StatesGroup):
     title = State()
     about = State()
     number = State()
-    stime = State()
-    collection = State()
+    ans = State()
+
+class edits(StatesGroup):
+    emenu = State()
+    edit = State()
+    title = State()
+    about = State()
+    edans = State()
+    share = State()
+    post = State()

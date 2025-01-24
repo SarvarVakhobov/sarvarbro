@@ -6,9 +6,9 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
 from data.config import MAX_EXAMS_AT_A_TIME
-from utils import g_code
+from utils.yau import g_code
 from keyboards.inline import confirm_admin, all_checked, one_checked
-from keyboards.keyb import main_markup, admin_markup, in_bet, num_quests
+from keyboards.keyb import main_key, back_key, skip_desc
 from states import creates
 from loader import db
 from filters import IsAdmin, IsAdminCallback
@@ -17,77 +17,61 @@ crt = Router()
 crt.message.filter(IsAdmin())
 crt.callback_query.filter(IsAdminCallback())
 
-# @crt.message(Command("create"))
-@crt.message(F.text == config.cr_test)
+@crt.message(F.text == dict.cr_test)
 async def create_test(message: types.Message, state: FSMContext):
-    # alr = db.fetchone("SELECT COUNT(*) FROM exams")[0]
-    # if alr==MAX_EXAMS_AT_A_TIME:
-    #     await message.answer("You exceeded the number of tests can be run at a time.")
-    #     return
-    # await message.reply("👇 Here, you can create a new test.\n⚠️ Make sure to check if a duplicate isn't already active.")
     response = "Please, send the title of the test:"
     await state.set_state(creates.title)
-    await message.answer(response, reply_markup=main_markup)
-    #
-    # alr = db.fetchone("SELECT correct FROM current")
-    # if alr is None:
-    #     await message.answer("Send the correct answers in this format:\n\t<code>4 abcabc...</code>\n\nP.S. - 4 means four options", reply_markup=main_markup)
-    #     await state.set_state(create_states.correct_answer)
-    # else:
-    #     await message.answer("Delete the current one first")
+    await message.answer(response, reply_markup=main_key)
 
 @crt.message(creates.title)
 async def take_title(message: types.Message, state: FSMContext):
     t = message.text
     await state.update_data(title=t)
     await state.set_state(creates.about)
-    await message.answer(f"<b>Title:</b> {t}\n\nPlease, send the description:", reply_markup=in_bet)
+    await message.answer(f"<b>Title:</b> {t}\n\nPlease, send the description", reply_markup=skip_desc)
 
-@crt.message(creates.about, F.text == config.back)
+@crt.message(creates.about, F.text == dict.back)
 async def back_to_title(message: types.Message, state: FSMContext):
     await state.set_state(creates.title)
     await create_test(message, state)
 
 @crt.message(creates.about, F.text == config.skip)
 async def skip_to_questnum(message: types.Message, state: FSMContext):
-    title = await state.get("title")
-    await state.update_data(about_skip = 1)
-    await state.set_state(creates.num_quest)
-    await message.answer(f"<b>Title:</b> {title}\n<s>Description skipped</s>\n\nPlease, send the number of questions:", reply_markup=num_quests)
+    title = await state.get_data("title")
+    await state.update_data(about_skip=1)
+    await state.set_state(creates.number)
+    await message.answer(f"<b>Title:</b> {title}\n<s>Description skipped</s>\n\nPlease, send the number of questions:", reply_markup=back_key)
 
 @crt.message(creates.about)
 async def about(message: types.Message, state: FSMContext):
-    # data = await state.get_data()
-    title = await state.get("title")
+    title = await state.get_data("title")
     a = message.text
     await state.update_data(about=a)
-    await state.update_data(about_skip = 0)
-    await state.set_state(creates.num_quest)
-    await message.answer(f"<b>Title:</b> {title}\n<b>Description:</b> {a}\n\nPlease, send the number of questions:", reply_markup=num_quests)
+    await state.update_data(about_skip=0)
+    await state.set_state(creates.number)
+    await message.answer(f"<b>Title:</b> {title}\n<b>Description:</b> {a}\n\nPlease, send the number of questions:", reply_markup=back_key)
 
-@crt.message(creates.num_quest, F.text == config.back)
+@crt.message(creates.number, F.text == config.back)
 async def back_to_about(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    response = f"<b>Title:</b> {await state.get('title')}"
-    response += (f"\n\nPlease, send the description:" if await state.get("about_skip")!="__skip" else "\n\nPlease, send the description:")
+    response = f"<b>Title:</b> {await state.get_data('title')}"
+    response += "\n\nPlease, send the description:"
     await state.set_state(creates.about)
-    await message.answer(response, reply_markup=in_bet)
+    await message.answer(response, reply_markup=skip_desc)
 
-@crt.message(creates.num_quest)
+@crt.message(creates.number)
 async def process_num(message: types.Message, state: FSMContext):
-    num = int()
     try:
         num = int(message.text)
     except Exception:
         await message.answer("Please, enter a valid number")
         return
     if 0 < num <= 50:
-        data = await state.get_data()
-        response = f"<b>Title:</b> {data['title']}"
-        response += f"\n<b>Description:</b> {data["about"]}" if data["about"]!="__skip" else ""
+        # data = await state.get_data()
+        response = f"<b>Title:</b> {await state.get_data('title')}"
+        response += "" if int(await state.get_data("about_skip")) else f"\n<b>Description:</b> {await state.get_data("about")}"
         response += f"\n<b>Number of questions:</b> {num}\n\n"
         await state.update_data(num_quest=num)
-        await state.set_state(create_states.correct_answer)
+        await state.set_state(creates.ans)
         await state.update_data(mode=1)
         await state.update_data(current=1)
         await state.update_data(correct="")
@@ -96,10 +80,10 @@ async def process_num(message: types.Message, state: FSMContext):
     else:
         await message.answer("Please, enter a number in range of 1 to 50 to provide good user experience")
 
-@crt.message(create_states.correct_answer, F.text == config.back)
+@crt.message(creates.correct_answer, F.text == config.back)
 async def back_to_num(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    if data["current"]>1:
+    if data["current"] > 1:
         cnt = data["current"]
         await state.update_data(current=cnt-1)
         correct = data["correct"]
@@ -111,10 +95,10 @@ async def back_to_num(message: types.Message, state: FSMContext):
         await message.answer(f"Send the answer for question number <b>{cnt-1}</b>")
     else:
         response = f"<b>Title:</b> {data['title']}"
-        response += f"\n<b>Description:</b> {data["about"]}" if data["about"] != "__skip" else ""
+        response += f"\n<b>Description:</b> {data['about']}" if data['about'] != "__skip" else ""
         response += "\n\nPlease, enter the number of questions:"
-        await state.set_state(creates.num_quest)
-        await message.answer(response, reply_markup=num_quests)
+        await state.set_state(creates.number)
+        await message.answer(response, reply_markup=back_key)
 
 @crt.callback_query(creates.correct_answer)
 async def process_checking(callback: types.CallbackQuery, state: FSMContext):
@@ -145,58 +129,27 @@ async def taking_answers(message: types.Message, state: FSMContext):
         correct = data["correct"]
         for line in range(len(raw)):
             if raw[line] != "":
-                correct += ("__" if cnt>1 else "") + raw[line]
-                cnt+=1
-        if cnt == n_questions+1:
+                correct += ("__" if cnt > 1 else "") + raw[line]
+                cnt += 1
+        if cnt == n_questions + 1:
             await state.update_data(correct=correct)
             await state.set_state(creates.confirm)
             await message.answer(f"Can you confirm your actions?", reply_markup=confirm_admin)
         else:
-            await message.answer("The number of questions doesn't match the entered value. Please, enter correct number of answers or change the number of questions.", reply_markup=num_quests)
+            await message.answer("The number of questions doesn't match the entered value. Please, enter correct number of answers or change the number of questions.", reply_markup=back_key)
     else:
         correct = data["correct"]
-        correct += ("__" if cnt >1 else "")+message.text
+        correct += ("__" if cnt > 1 else "") + message.text
         await state.update_data(correct=correct)
         if cnt == n_questions:
-            await state.set_state(create_states.confirm)
+            await state.set_state(creates.confirm)
             await message.answer("You have done entering all the answers. Can you confirm your actions?", reply_markup=confirm_admin)
         else:
             cnt += 1
             await state.update_data(current=cnt)
             await message.answer(f"Send the answer for question number <b>{cnt}</b>")
 
-
-# @admin_router.message(create_states.correct_answer)
-# async def rec_correct_answer(message: types.Message, state: FSMContext):
-#     raw = message.text.lower()
-#     try:
-#         option = int(raw.split()[0])
-#     except Exception as e:
-#         print(e)
-#         await message.answer("Please, follow the format.")
-#         await state.clear()
-#         return
-#     raw = raw.split()[1]
-#     num = len(raw)
-#     legit = True
-#     for i in raw:
-#         if i not in "abcdefghijklmnopqrstuvwxyz"[:option]:
-#             legit = False
-#             break
-#     if legit:
-#         response = f"Can you confirm the test has {num} answers and they are as follows:\n"
-#         for i in range(num):
-#             response += f"{i+1}.{raw[i].upper()}"
-#             if i != num-1:
-#                 response += ", "
-#         await message.reply(response, reply_markup=confirm_admin)
-#         await state.update_data(corr=raw)
-#         await state.update_data(option=option)
-#         await state.set_state(create_states.confirm)
-#     else:
-#         await message.answer("The answer include an option that's not legit")
-
-@crt.callback_query(create_states.confirm)
+@crt.callback_query(creates.confirm)
 async def create_confirm(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     if callback.data == "admin_confirm":
@@ -215,77 +168,19 @@ async def create_confirm(callback: types.CallbackQuery, state: FSMContext):
     elif callback.data == "admin_cancel":
         await callback.message.answer("Test creation cancelled")
         await callback.answer("Cancelled")
-    await callback.bot.send_message(callback.message.chat.id, "You've been brought to 🏠 Main menu.", reply_markup=admin_markup)
+    await callback.bot.send_message(callback.message.chat.id, "You've been brought to 🏠 Main menu.", reply_markup=main_key)
     await callback.message.delete()
     await state.clear()
 
-@crt.message(create_states.confirm, F.text == config.back)
+@crt.message(creates.confirm, F.text == config.back)
 async def back_to_receiving(message: types.Message, state: FSMContext):
     data = await state.get_data()
     response = f"<b>Title:</b> {data['title']}"
-    response += f"\n<b>Description:</b> {data["about"]}" if data["about"] != "__skip" else ""
-    response += f"\n<b>Number of questions:</b> {data["num_quest"]}\n\n"
-    await state.set_state(create_states.correct_answer)
+    response += f"\n<b>Description:</b> {data['about']}" if data['about'] != "__skip" else ""
+    response += f"\n<b>Number of questions:</b> {data['num_quest']}\n\n"
+    await state.set_state(creates.correct_answer)
     await state.update_data(mode=1)
     await state.update_data(current=1)
     await state.update_data(correct="")
     response += "You can send the correct answers in either of this way. Change as you please and send them:"
     await message.answer(response, reply_markup=all_checked)
-
-
-
-
-# @admin_router.message(Command("answers"))
-# @admin_router.message(F.text == config.shw_ans)
-# async def shw_answer(message: types.Message, state: FSMContext):
-#     ans = db.fetchone("SELECT correct FROM current")
-#     if ans is not None:
-#         ans=ans[0]
-#         response = f"The test has {len(ans)} questions. The correct answers are as follows:\n"
-#         for i in range(len(ans)):
-#             response += f"{i+1}. {ans[i].upper()}"
-#             if i != len(ans) - 1:
-#                 response += ", "
-#         await message.answer(response)
-#     else:
-#         await message.answer("There is no test active right now. Create one first")
-
-# @admin_router.message(Command("del"))
-# @admin_router.message(F.text == config.dl_test)
-# async def delete_test(message: types.Message, state: FSMContext):
-#     alr = db.fetchone("SELECT correct FROM current")
-#     if alr is not None:
-#         await message.answer("Can you confirm you want to delete the test", reply_markup=confirm_admin)
-#         await state.set_state(del_states.confirm)
-#         db.create_tables()
-#     else:
-#         await message.answer("There is no test active right now. Create one first")
-
-# @admin_router.callback_query(del_states.confirm)
-# async def delete_confirm(callback: types.CallbackQuery, state: FSMContext):
-#     if callback.data == "admin_confirm":
-#         db.query("DELETE FROM current")
-#         db.query("DELETE FROM user")
-#         await callback.message.answer("Test deleted")
-#         await callback.answer("Confirmed")
-#         await state.clear()
-#     elif callback.data == "admin_cancel":
-#         await callback.message.answer("Test deletion cancelled. You can resend the right answers.")
-#         await callback.answer("Cancelled")
-#     await callback.message.delete()
-
-# @admin_router.message(Command("results"))
-# @admin_router.message(F.text == config.nm_ans)
-# async def nm_answer(message: types.Message):
-#     alr = db.fetchone("SELECT correct FROM current")
-#     if alr is not None:
-#         raw = db.fetchall("SELECT idx, fullname, answered FROM user ORDER BY answered DESC")
-#         if len(raw) > 0:
-#             response = "The results of the test is as follows:\n"
-#             for i in range(len(raw)):
-#                 response += f"{i + 1}. {raw[i][1]} - {raw[i][2]}\n"
-#             await message.answer(response)
-#         else:
-#             await message.answer("No one has answered yet")
-#     else:
-#         await message.answer("There is no test active right now. Create one first")

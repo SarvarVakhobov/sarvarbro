@@ -8,6 +8,7 @@ from keyboards.keyb import main_key, back_key
 from aiogram.fsm.context import FSMContext
 from loader import db, bot
 from time import sleep
+from aiogram import html
 
 set = Router()
 
@@ -117,9 +118,9 @@ async def get_link(message: types.Message, state: FSMContext):
     await state.update_data(chid=chanid)
     # print(title, lk)
     await message.answer(f"Check and confirm everything is correct\n\nChat Information:"
-            f"\n\t\tTitle: {channel_info.title}"
-            f"\n\t\tMembers count: {mb_cnt}"
-            f"\n\t\tDescription: <code>{channel_info.description or 'No description'}</code>", reply_markup=mandconfirm((title, lk)), disable_web_page_preview=True)
+            f"\n\t\tTitle: {html.bold(channel_info.title)}"
+            f"\n\t\tMembers count: {html.bold(mb_cnt)}"
+            f"\n\t\tDescription: {html.blockquote(channel_info.description or 'No description')}", reply_markup=mandconfirm((title, lk)), disable_web_page_preview=True)
 
 @set.message(F.text == dict.back, sets.confirm)
 async def back_to_link(message: types.Message, state: FSMContext) -> None:
@@ -158,6 +159,13 @@ async def setfro(callback: types.CallbackQuery, state: FSMContext) -> None:
             sleep(2)
             await msg.delete()
             return
+        old = db.fetchone("SELECT title, link, chid, post FROM channel WHERE post > 0")
+        print(old)
+        if old:
+            if old[3]==1:
+                db.query("DELETE FROM channel WHERE chid = ?", (old[2],))
+            else:
+                db.query("UPDATE channel SET post = 0 WHERE chid = ?", (old[2],))
         db.query("UPDATE channel SET post = 2 WHERE idx = ?", (idx,))
         await callback.answer(f"Successfully set {channel[0]} as posting channel")
         # await callback.message.edit_text("Back to posting channel menu", reply_markup=main_key)

@@ -15,7 +15,7 @@ reger.message.filter(IsNotRegistered(), IsUser())
 async def process_command(message: types.Message) -> None:
     db.query("INSERT INTO users (userid, fullname, username) VALUES (?, ?, ?)", (message.from_user.id, message.from_user.full_name, message.from_user.username))
     response = f"👋 Heyy, <b>{message.from_user.first_name}</b>."
-    channels = notsubbed(message.from_user.id)
+    channels = await notsubbed(message.from_user.id)
     if channels:
         response += "\n\n❕ You need to join the following chats to be able to use me."
         await message.answer(response, reply_markup=mand_chans(channels))
