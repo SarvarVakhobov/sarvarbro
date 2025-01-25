@@ -1,6 +1,6 @@
 from aiogram import Router, types, F
 from aiogram.filters import Command, CommandStart
-from filters import IsAdmin, IsAdminCallback
+from filters import IsAdmin, IsAdminCallback, CbData
 from aiogram.fsm.context import FSMContext
 from data import dict
 from loader import db, bot
@@ -17,9 +17,15 @@ admin.callback_query.filter(IsAdminCallback())
 @admin.message(CommandStart())
 async def adminstart(message: types.Message, state: FSMContext) -> None:
     await state.clear()
-    await bot.get_chat(message.from_user.id)
+    # await bot.get_chat(message.from_user.id)
 
     await message.answer(f"Hello, admin <a href=\"tg://user?id=7079607349\">wtf</a>", reply_markup=adm_default)
+
+@admin.callback_query(CbData("main_menu"))
+async def adminmenu(callback: types.CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await callback.message.answer("States cleared, here is the main menu", reply_markup=adm_default)
+    await callback.message.delete()
 
 @admin.message(F.text == dict.mands)
 async def pmands(message: types.Message, state: FSMContext) -> None:

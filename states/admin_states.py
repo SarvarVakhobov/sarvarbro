@@ -20,7 +20,9 @@ class sets(StatesGroup):
 class creates(StatesGroup):
     title = State()
     about = State()
+    instructions = State()  # New state added
     number = State()
+    way = State()
     ans = State()
 
 class edits(StatesGroup):

@@ -49,3 +49,11 @@ def from_mans(channels):
         btns.append([InlineKeyboardButton(text=channel[0], url=channel[1]), InlineKeyboardButton(text=dict.select, callback_data=f"select_{channel[2]}")])
     btns.append([InlineKeyboardButton(text=dict.back, callback_data="back")])
     return InlineKeyboardMarkup(inline_keyboard=btns)
+
+btns2 = [
+    [
+        InlineKeyboardButton(text=dict.all_at_one, callback_data="all"),
+        InlineKeyboardButton(text=dict.one_by_one, callback_data="one")
+    ]
+]
+ans_enter_meth = InlineKeyboardMarkup(inline_keyboard=btns2)

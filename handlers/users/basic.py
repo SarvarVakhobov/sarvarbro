@@ -25,6 +25,11 @@ async def welcome(message: types.Message, state: FSMContext) -> None:
     response = f"👋 Salom, <b>{message.from_user.mention_html()}</b>. Botga xush kelibsiz!"
     await message.answer(response, reply_markup=user_markup)
 
+@user.callback_query(CbData("main_menu"))
+async def main_menu(callback: types.CallbackQuery) -> None:
+    await callback.message.answer("Main menu", reply_markup=user_markup)
+    await callback.message.delete()
+
 @user.message(Command("help"))
 @user.message(F.text == dict.help_txt)
 async def helpme(message: types.Message, state: FSMContext) -> None:
