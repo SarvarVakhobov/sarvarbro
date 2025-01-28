@@ -6,7 +6,7 @@ from loader import db
 from states import creates
 from utils.yau import ber
 from keyboards.keyb import back_key, main_key, skip_desc
-from keyboards.inline import ans_enter_meth
+from keyboards.inline import ans_enter_meth, obom
 
 crtest = Router()
 
@@ -60,7 +60,7 @@ async def back_to_about(message: types.Message, state: FSMContext) -> None:
 async def skip_to_questnum(message: types.Message, state: FSMContext) -> None:
     await state.update_data(instructions_skip=1)
     await state.set_state(creates.number)
-    response = f"Title: {html.bold(f'{await ber(state, "title")}')}\n\nPlease, send the number of questions:"
+    response = f"Title: {html.bold(f'{await ber(state, "title")}')}{f"\nDescription: {html.bold(f'{await ber(state, 'about')}')}" if await ber(state, "about_skip") == 0 else ""}\n\nPlease, send the number of questions:"
     await message.answer(response, reply_markup=back_key)
 
 @crtest.message(creates.instructions)
@@ -75,7 +75,7 @@ async def instructions(message: types.Message, state: FSMContext) -> None:
 
 @crtest.message(creates.number, F.text == dict.back)
 async def back_to_instructions(message: types.Message, state: FSMContext) -> None:
-    response = f"Title: {html.bold(f'{await ber(state, 'title')}')}\n\nPlease, send the instructions for users:"
+    response = f"Title: {html.bold(f'{await ber(state, 'title')}')}{f"\nDescription: {html.bold(f'{await ber(state, 'about')}')}" if await ber(state, "about_skip") == 0 else ""}\n\nPlease, send the instructions for users:"
     await state.set_state(creates.instructions)
     await message.answer(response, reply_markup=skip_desc)
 
@@ -96,4 +96,18 @@ async def process_num(message: types.Message, state: FSMContext) -> None:
         await message.answer("Please, enter a number in range of 1 to 100 to provide good user experience. Contact the developer if you need to create a test with more questions.")
 
 
+@crtest.message(creates.way, F.text == dict.back)
+async def back_to_number(message: types.Message, state: FSMContext) -> None:
+    response = f"Title: {html.bold(f'{await ber(state, 'title')}')}{f"\nDescription: {html.bold(f'{await ber(state, 'about')}')}" if await ber(state, "about_skip") == 0 else ""}{f"\nInstructions: {html.bold(f'{await ber(state, 'instructions')}')}" if await ber(state, "instructions_skip") == 0 else ""}\n\nPlease, send the number of questions:"
+    await state.set_state(creates.number)
+    await message.answer(response, reply_markup=back_key)
 
+@crtest.callback_query(CbData("all"))
+async def all_at_once(callback: types.CallbackQuery, state: FSMContext) -> None:
+    await callback.message.answer(f"Please, send the answers in the following format:\n\n{html.code("Answer1\nAnswer2\nAnswer3,Answer3Alternative\nAnswer4")}")
+    await state.update_data(mode=1)
+
+@crtest.callback_query(CbData("one"))
+async def one_by_one(callback: types.CallbackQuery, state: FSMContext) -> None:
+    await callback.message.answer("Please, send the first answer:", reply_markup=obom(4, 23, [1, 2, 3]))
+    await state.update_data(mode=2)
