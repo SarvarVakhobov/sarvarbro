@@ -22,7 +22,7 @@ async def create_test(message: types.Message, state: FSMContext) -> None:
 @crtest.message(creates.title)
 async def take_title(message: types.Message, state: FSMContext) -> None:
     t = message.text
-    response = f"Title: {html.bold(f'   {{{t}}}')}\n\nPlease, send the description"
+    response = f"Title: {html.bold(f'{{{t}}}')}\n\nPlease, send the description"
     await state.update_data(title=t)
     await state.set_state(creates.about)
     await message.answer(response, reply_markup=skip_desc)
@@ -37,7 +37,7 @@ async def back_to_title(message: types.Message, state: FSMContext) -> None:
 async def skip_to_instructions(message: types.Message, state: FSMContext) -> None:
     await state.update_data(about_skip=1)
     await state.set_state(creates.instructions)
-    response = f"Title: {html.bold(f'{await ber(state, "title")}')}\n\nPlease, send the instructions for users:"
+    response = f"Title: {html.bold(f'{{await ber(state, \"title\")}}')}\n\nPlease, send the instructions for users:"
     await message.answer(response, reply_markup=skip_desc)
 
 @crtest.message(creates.about)
