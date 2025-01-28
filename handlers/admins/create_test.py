@@ -22,7 +22,7 @@ async def create_test(message: types.Message, state: FSMContext) -> None:
 @crtest.message(creates.title)
 async def take_title(message: types.Message, state: FSMContext) -> None:
     t = message.text
-    response = f"Title: {html.bold(f"{t}")}\n\nPlease, send the description"
+    response = f"Title: {html.bold(f'   {{{t}}}')}\n\nPlease, send the description"
     await state.update_data(title=t)
     await state.set_state(creates.about)
     await message.answer(response, reply_markup=skip_desc)
