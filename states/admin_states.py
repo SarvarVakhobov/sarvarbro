@@ -14,6 +14,7 @@ class sets(StatesGroup):
     post = State()
     link = State()
     confirm = State()
+    ping = State()
     fmans = State()
     del_con = State()
 
@@ -33,3 +34,16 @@ class edits(StatesGroup):
     edans = State()
     share = State()
     post = State()
+
+class BulkPost(StatesGroup):
+    waiting_for_message = State()
+    waiting_for_confirmation = State()
+
+    #check status
+
+    provide_id = State()
+    
+
+class EditMessages(StatesGroup):
+    waiting_for_start_msg = State()
+    waiting_for_success_msg = State()

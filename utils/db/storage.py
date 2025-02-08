@@ -12,12 +12,11 @@ class DatabaseManager(object):
 
 
     def create_tables(self):
-        self.query('CREATE TABLE IF NOT EXISTS users (idx INTEGER PRIMARY KEY, userid TEXT, fullname TEXT, username TEXT, regdate TEXT DEFAULT CURRENT_TIMESTAMP)')
-        self.query("CREATE TABLE IF NOT EXISTS folders (idx INTEGER PRIMARY KEY, title TEXT)")
-        self.query("CREATE TABLE IF NOT EXISTS messages (idx INTEGER PRIMARY KEY, jid INTEGER, msgid TEXT DEFAULT NULL, status INTEGER DEFAULT 0, date TEXT)")
-        self.query("CREATE TABLE IF NOT EXISTS exams (idx INTEGER PRIMARY KEY, code TEXT, title TEXT, about TEXT DEFAULT NULL, num_questions INTEGER, correct TEXT, folder INTEGER DEFUALT NULL, sdate TEXT DEFAULT NULL, duration INTEGER DEFAULT NULL, running INTEGER DEFAULT 0, hide INTEGER DEFAULT 1)")
-        self.query("CREATE TABLE IF NOT EXISTS submissions(idx INTEGER PRIMARY KEY, exid INTEGER, userid TEXT, date TEXT DEFAULT CURRENT_TIMESTAMP, corr INTEGER)")
-        self.query("CREATE TABLE IF NOT EXISTS channel (idx INTEGER PRIMARY KEY, chid TEXT, title TEXT, link TEXT, post INTEGER DEFAULT 0)")
+        self.query('CREATE TABLE IF NOT EXISTS users (idx INTEGER PRIMARY KEY, userid TEXT, fullname TEXT, username TEXT, regdate TEXT DEFAULT CURRENT_TIMESTAMP, subscribed INTEGER DEFAULT 0)')
+        self.query("CREATE TABLE IF NOT EXISTS channel (idx INTEGER PRIMARY KEY, chid TEXT, title TEXT, link TEXT)")
+        self.query("CREATE TABLE IF NOT EXISTS bulk_messages (idx INTEGER PRIMARY KEY, content TEXT, type TEXT, status INTEGER DEFAULT 0, date TEXT DEFAULT CURRENT_TIMESTAMP)")
+        # New table to store message settings
+        self.query("CREATE TABLE IF NOT EXISTS message_settings (key TEXT PRIMARY KEY, content TEXT)")
 
     def query(self, arg, values=None):
         if values == None:
@@ -39,6 +38,28 @@ class DatabaseManager(object):
         else:
             self.cur.execute(arg, values)
         return self.cur.fetchall()
+
+    def add_bulk_message(self, content, type):
+        self.query("INSERT INTO bulk_messages (content, type) VALUES (?, ?)", (content, type))
+        return self.cur.lastrowid
+
+    def update_bulk_message_status(self, idx, status):
+        self.query("UPDATE bulk_messages SET status = ? WHERE idx = ?", (status, idx))
+
+    def get_bulk_message_status(self, idx):
+        return self.fetchone("SELECT status FROM bulk_messages WHERE idx = ?", (idx,))
+
+    def get_all_users(self):
+        return self.fetchall("SELECT userid FROM users")
+
+    def update_message_setting(self, key, content):
+        if self.fetchone("SELECT key FROM message_settings WHERE key = ?", (key,)):
+            self.query("UPDATE message_settings SET content = ? WHERE key = ?", (content, key))
+        else:
+            self.query("INSERT INTO message_settings (key, content) VALUES (?, ?)", (key, content))
+
+    def get_message_setting(self, key):
+        return self.fetchone("SELECT content FROM message_settings WHERE key = ?", (key,))
 
     def __del__(self):
         self.conn.close()

@@ -1,4 +1,4 @@
-from aiogram import Router, types, F
+from aiogram import Router, types, F, html
 from aiogram.filters import Command, CommandStart
 from filters import IsAdmin, IsAdminCallback, CbData
 from aiogram.fsm.context import FSMContext
@@ -19,7 +19,7 @@ async def adminstart(message: types.Message, state: FSMContext) -> None:
     await state.clear()
     # await bot.get_chat(message.from_user.id)
 
-    await message.answer(f"Hello, admin <a href=\"tg://user?id=7079607349\">wtf</a>", reply_markup=adm_default)
+    await message.answer(f"👋 Hi, {html.bold(message.from_user.mention_html())}\n\n👀 You're an admin, do whatever you want!", reply_markup=adm_default)
 
 @admin.callback_query(CbData("main_menu"))
 async def adminmenu(callback: types.CallbackQuery, state: FSMContext) -> None:
@@ -32,7 +32,7 @@ async def pmands(message: types.Message, state: FSMContext) -> None:
     await state.set_state(mands.mmenu)
     await message.answer(f"Menu: <b>{dict.mands}</b>", reply_markup=main_key)
     response = "There are no mandatory chats to join right now. You can add from here"
-    channels = db.fetchall("SELECT title, link, idx FROM channel WHERE NOT post = 1")
+    channels = db.fetchall("SELECT title, link, idx FROM channel")
     if channels:
         response = "Following are the mandatory chats to join. You can add new or delete existing ones."
     await message.answer(response, reply_markup=mandchans(channels))

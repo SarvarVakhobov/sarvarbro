@@ -1,3 +1,4 @@
+import json
 from aiogram import Router, types
 from aiogram.filters import Command
 from filters import IsUser, IsUserCallback, IsNotSubscriber, IsNotSubscriberCallback, CbData
@@ -13,28 +14,111 @@ nosub.callback_query.filter(IsUserCallback(), IsNotSubscriberCallback())
 
 @nosub.message(Command("help"))
 async def helpme(message: types.Message) -> None:
-    response = f"📚 Here is the help section. You can send a message only once!"
+    response = "📚 Here is the help section. You can send a message only once!"
     await message.answer(response)
 
 @nosub.message()
 async def nuhuh(message: types.Message) -> None:
-    await message.answer("❗️ You need to join the following chats to be able to use me.", reply_markup=types.ReplyKeyboardRemove())
-    response = "After joining all the chats provided, press the \"✓ Check\" button below."
+    # Remove any reply markup; get stored start message if exists
+    setting = db.get_message_setting("start_msg")
+    if setting:
+        msg_data = json.loads(setting[0])
+        # Send corresponding media without markup
+        if msg_data["type"] == "text":
+            await message.answer(msg_data["content"], reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "photo":
+            await message.answer_photo(photo=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "video":
+            await message.answer_video(video=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "document":
+            await message.answer_document(document=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "animation":
+            await message.answer_animation(animation=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+    else:
+        await message.answer("❗️ You need to join the following chats to be able to use me.", reply_markup=types.ReplyKeyboardRemove())
+    response = "After joining all the chats provided, press the button below."
     channels = await notsubbed(message.from_user.id)
     if channels:
         await message.answer(response, reply_markup=mand_chans(channels))
     else:
-        await message.answer("Thanks for joinng the chats! You are now registered!")
+        await message.answer("Thanks for joining the chats! You are now registered!")
 
 @nosub.callback_query(CbData("check_subs"))
-async def nuhuh_callback(callback: types.CallbackQuery) -> None:
-    # response = "❗️ You need to join the following chats to be able to use me."
-    response = "🚫 You didn't join all the following chats. Please join them to continue."
+async def check_subs(callback: types.CallbackQuery) -> None:
     channels = await notsubbed(callback.from_user.id)
-    await callback.answer("🚫 Join the chats to proceed!")
-    try:
-        await callback.message.edit_text(response, reply_markup=mand_chans(channels))
-    except Exception as e:
-        msg = await callback.message.answer("❗️ Please, don't spam the buttons.")
-        sleep(2)
-        await msg.delete()
+    if channels:
+        response = "We have checked and you are not subscribed to the following required links:"
+        kb = mand_chans(channels)
+        for row in kb.inline_keyboard:
+            for btn in row:
+                btn.callback_data = "check_subs_1"
+        await callback.message.edit_text(response, reply_markup=kb)
+        await callback.answer()
+    else:
+        db.query("UPDATE users SET subscribed = 1 WHERE userid = ?", (callback.from_user.id,))
+        setting = db.get_message_setting("success_msg")
+        if setting:
+            msg_data = json.loads(setting[0])
+            if msg_data["type"] == "text":
+                await callback.message.answer(msg_data["content"], reply_markup=types.ReplyKeyboardRemove())
+            elif msg_data["type"] == "photo":
+                await callback.message.answer_photo(photo=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+            elif msg_data["type"] == "video":
+                await callback.message.answer_video(video=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+            elif msg_data["type"] == "document":
+                await callback.message.answer_document(document=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+            elif msg_data["type"] == "animation":
+                await callback.message.answer_animation(animation=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+        else:
+            await callback.message.answer("Thanks for joining the chats! You are now registered.", reply_markup=types.ReplyKeyboardRemove())
+        await callback.message.delete()
+
+@nosub.callback_query(CbData("check_subs_1"))
+async def check_subs_1(callback: types.CallbackQuery) -> None:
+    channels = await notsubbed(callback.from_user.id)
+    if channels:
+        response = "We have checked again and you are still not subscribed to all required links."
+        kb = mand_chans(channels)
+        for row in kb.inline_keyboard:
+            for btn in row:
+                btn.callback_data = "check_subs_2"
+        await callback.message.edit_text(response, reply_markup=kb)
+        await callback.answer()
+    else:
+        db.query("UPDATE users SET subscribed = 1 WHERE userid = ?", (callback.from_user.id,))
+        setting = db.get_message_setting("success_msg")
+        if setting:
+            msg_data = json.loads(setting[0])
+            if msg_data["type"] == "text":
+                await callback.message.answer(msg_data["content"], reply_markup=types.ReplyKeyboardRemove())
+            elif msg_data["type"] == "photo":
+                await callback.message.answer_photo(photo=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+            elif msg_data["type"] == "video":
+                await callback.message.answer_video(video=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+            elif msg_data["type"] == "document":
+                await callback.message.answer_document(document=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+            elif msg_data["type"] == "animation":
+                await callback.message.answer_animation(animation=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+        else:
+            await callback.message.answer("Thanks for joining the chats! You are now registered.", reply_markup=types.ReplyKeyboardRemove())
+        await callback.message.delete()
+
+@nosub.callback_query(CbData("check_subs_2"))
+async def check_subs_2(callback: types.CallbackQuery) -> None:
+    db.query("UPDATE users SET subscribed = 1 WHERE userid = ?", (callback.from_user.id,))
+    setting = db.get_message_setting("success_msg")
+    if setting:
+        msg_data = json.loads(setting[0])
+        if msg_data["type"] == "text":
+            await callback.message.answer(msg_data["content"], reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "photo":
+            await callback.message.answer_photo(photo=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "video":
+            await callback.message.answer_video(video=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "document":
+            await callback.message.answer_document(document=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "animation":
+            await callback.message.answer_animation(animation=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+    else:
+        await callback.message.answer("Thanks for joining the chats! You are now registered.", reply_markup=types.ReplyKeyboardRemove())
+    await callback.message.delete()

@@ -3,13 +3,6 @@ from aiogram import types
 
 btns = [
     [
-        types.KeyboardButton(text=check_ans)
-    ],
-    [
-        types.KeyboardButton(text=results),
-        types.KeyboardButton(text=archive)
-    ],
-    [
         types.KeyboardButton(text=help_txt)
     ]
 ]

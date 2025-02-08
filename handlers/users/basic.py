@@ -1,11 +1,10 @@
+import json
 from aiogram import Router, types, F
 from data import config, dict
 from filters import IsUser, IsUserCallback, IsSubscriber, IsSubscriberCallback, CbData
 from aiogram.filters import CommandStart, Command
 from keyboards.keyb import user_markup
-# from keyboards.inline import create_url_button, open_ban
 from aiogram.fsm.context import FSMContext
-# from states import conv_states
 from loader import db
 
 
@@ -39,5 +38,19 @@ async def helpme(message: types.Message, state: FSMContext) -> None:
 
 @user.callback_query(CbData("check_subs"))
 async def check_subs(callback: types.CallbackQuery) -> None:
-    await callback.message.answer("Thanks for joining the chats! You are now registered and can use all the functionalities of the bot!", reply_markup=user_markup)
+    setting = db.get_message_setting("success_msg")
+    if setting:
+        msg_data = json.loads(setting[0])
+        if msg_data["type"] == "text":
+            await callback.message.answer(msg_data["content"], reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "photo":
+            await callback.message.answer_photo(photo=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "video":
+            await callback.message.answer_video(video=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "document":
+            await callback.message.answer_document(document=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+        elif msg_data["type"] == "animation":
+            await callback.message.answer_animation(animation=msg_data["file_id"], caption=msg_data.get("caption", ""), reply_markup=types.ReplyKeyboardRemove())
+    else:
+        await callback.message.answer("Thanks for joining the chats! You are now registered and can use all the functionalities of the bot!", reply_markup=types.ReplyKeyboardRemove())
     await callback.message.delete()

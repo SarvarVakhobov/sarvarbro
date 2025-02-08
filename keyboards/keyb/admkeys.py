@@ -3,17 +3,18 @@ from data import dict
 
 btns1 = [
     [
-        KeyboardButton(text=dict.cr_test)
+        KeyboardButton(text=dict.post)
     ],
     [
-        KeyboardButton(text=dict.exams),
+        KeyboardButton(text=dict.settings),
         KeyboardButton(text=dict.mands)
     ],
     [
-        KeyboardButton(text=dict.settings), 
-        KeyboardButton(text=dict.stats)
+        KeyboardButton(text=dict.bulk_status)
     ]
 ]
+
+# btns1.append()
 
 adm_default = ReplyKeyboardMarkup(keyboard=btns1, resize_keyboard=True)
 

@@ -28,10 +28,19 @@ def mandconfirm(channel):
 
 btns1 = [
     [
-        InlineKeyboardButton(text=dict.post, callback_data="post"), 
-        InlineKeyboardButton(text=dict.defaults, callback_data="defaults")
+        InlineKeyboardButton(text="🆕 Not sub", callback_data="edit_start_msg"),
+        InlineKeyboardButton(text="🎉 Success", callback_data="edit_success_msg")
+    ],
+    [
+        InlineKeyboardButton(text="🏓 Ping", callback_data="ping")
     ]
 ]
+# Added inline buttons to initiate editing the start and success messages
+# btns1.append([
+    
+# ])
+# # Add a row with Ping button
+# btns1.append()
 set_menu = InlineKeyboardMarkup(inline_keyboard=btns1)
 
 def post_chan(channel):
@@ -82,40 +91,20 @@ ans_enter_meth = InlineKeyboardMarkup(inline_keyboard=btns2)
 #             row.append(InlineKeyboardButton(text=f"{i*5+1+j}", callback_data=f"test_{i*5+1+j}"))
 #         btns.append(row)
 
-def obom(cur, numq, donel, mcqnum=config.MULTIPLE_CHOICE_DEF, page=1):
-    """
-    cur: current question number
-    numq: total number of questions
-    mcqnum: number of choices in mcq
-    donel: list of done questions
-    page: current page, self explanatory
-    """
-    
-    btns = []
-    arow = [InlineKeyboardButton(text="-", callback_data="test_minus")]
-    for i in range(mcqnum):
-        arow.append(InlineKeyboardButton(text=f"{chr(65+i)}", callback_data=f"mcq_{i-65}")) # add ✓ for multiple answers and maybe done button
-    # arow.append(*[InlineKeyboardButton(text=f"{chr(65+i)}", callback_data=f"mcq_{i-65}") for i in range(config.MULTIPLE_CHOICE_DEF)])
-    arow.append(InlineKeyboardButton(text="+", callback_data="test_plus"))
-    btns.append(arow)
-    qforthis = min(config.MAX_QUESTION_IN_A_PAGE, numq-(page-1)*config.MAX_QUESTION_IN_A_PAGE)
-    for i in range((qforthis+4)//5):
-        row = []
-        for j in range(min(5, qforthis-i*5)):
-            now = (page-1)*config.MAX_QUESTION_IN_A_PAGE+i*5+j+1
-            if now == cur:
-                row.append(InlineKeyboardButton(text=f"🟡 {now}", callback_data=f"jump_{now}"))
-            elif now in donel:
-                row.append(InlineKeyboardButton(text=f"🟢 {now}", callback_data=f"jump_{now}"))
-            else:
-                row.append(InlineKeyboardButton(text=f"{now}", callback_data=f"jump_{now}"))
-        btns.append(row)
-    row = [
-        InlineKeyboardButton(text="⇐", callback_data="test_prev"),
-        InlineKeyboardButton(text="←", callback_data="test_back"),
-        InlineKeyboardButton(text=f"{page}", callback_data="test_page"),
-        InlineKeyboardButton(text="→", callback_data="test_next"),
-        InlineKeyboardButton(text="⇒", callback_data="test_next")
+# New function: returns inline keyboard with Refresh and Back buttons for ping
+def ping_menu():
+    btns = [
+        [
+            InlineKeyboardButton(text="Refresh", callback_data="refresh_ping"),
+            InlineKeyboardButton(text="Back", callback_data="back_from_settings")
+        ]
     ]
-    btns.append(row)
     return InlineKeyboardMarkup(inline_keyboard=btns)
+
+btns3 = [
+    [
+        InlineKeyboardButton(text=dict.back, callback_data="back"),
+        InlineKeyboardButton(text=dict.refresh_txt, callback_data="refresh_ping")
+    ]
+]
+ping_set = InlineKeyboardMarkup(inline_keyboard=btns3)

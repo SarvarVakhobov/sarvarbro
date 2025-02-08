@@ -15,46 +15,39 @@ class IsNotRegistered(BaseFilter):
 
 class IsSubscriber(BaseFilter):
     async def __call__(self, message: Message) -> bool:
-        channels = db.fetchall("SELECT chid FROM channel WHERE NOT post = 1")
-        
+        user_row = db.fetchone("SELECT subscribed FROM users WHERE userid=?", (message.from_user.id,))
+        if user_row and user_row[0] == 1:
+            return True
+        channels = db.fetchall("SELECT chid FROM channel")
         for ch in channels:
             if not await checksub(message.from_user.id, ch[0]):
-            #  member = await bot.get_chat_member(chat_id=ch[0], user_id=message.from_user.id)
-            # print(member)
-            # if member.status not in [ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
                 return False
         return True
 
 class IsNotSubscriber(BaseFilter):
     async def __call__(self, message: Message) -> bool:
-        channels = db.fetchall("SELECT chid FROM channel WHERE NOT post = 1")
-        print(channels)
+        channels = db.fetchall("SELECT chid FROM channel")
         for ch in channels:
             if not await checksub(message.from_user.id, ch[0]):
-            # member = await bot.get_chat_member(chat_id=ch[0], user_id=message.from_user.id)
-            # print(member)
-            # if member.status not in [ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
                 return True
         return False
 
 class IsSubscriberCallback(BaseFilter):
     async def __call__(self, callback: CallbackQuery) -> bool:
-        channels = db.fetchall("SELECT chid FROM channel WHERE NOT post = 1")
+        user_row = db.fetchone("SELECT subscribed FROM users WHERE userid=?", (callback.from_user.id,))
+        if user_row and user_row[0] == 1:
+            return True
+        channels = db.fetchall("SELECT chid FROM channel")
         for ch in channels:
             if not await checksub(callback.from_user.id, ch[0]):
-            # member = await bot.get_chat_member(chat_id=ch[0], user_id=callback.from_user.id)
-            # print(member)
-            # if member.status not in [ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
-            # if callback.from_user.id not in getsubs(ch[0]):
                 return False
         return True
 
 class IsNotSubscriberCallback(BaseFilter):
     async def __call__(self, callback: CallbackQuery) -> bool:
-        channels = db.fetchall("SELECT chid FROM channel WHERE NOT post = 1")
+        channels = db.fetchall("SELECT chid FROM channel")
         for ch in channels:
             if not await checksub(callback.from_user.id, ch[0]):
-            # if callback.from_user.id in getsubs(ch[0]):
                 return True
         return False
 
@@ -77,11 +70,3 @@ class IsUserCallback(BaseFilter):
     async def __call__(self, callback: CallbackQuery) -> bool:
         res = callback.from_user.id not in config.ADMINS
         return res and callback.message.chat.type == "private"
-
-class IsChats(BaseFilter):
-    async def __call__(self, message: Message) -> bool:
-        return message.message_thread_id not in [config.MANAGE_THREAD, None, config.BROADCAST_THREAD, config.MESSAGE_NOTICE_THREAD]
-
-class IsChatsCallback(BaseFilter):
-    async def __call__(self, callback: CallbackQuery) -> bool:
-        return callback.message.message_thread_id not in [config.MANAGE_THREAD, None, config.BROADCAST_THREAD, config.MESSAGE_NOTICE_THREAD]
